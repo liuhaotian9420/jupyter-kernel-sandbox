@@ -14,7 +14,8 @@ def run_auth_example():
     # Connection parameters
     gateway_http = "http://localhost:8889"
     gateway_ws = "ws://localhost:8889"
-    kernel_name = "sandbox-python"
+    # 默认内核为 python3（非自定义 sandbox 内核）
+    kernel_name = "python3"
     file_server_url = "http://localhost:8080"
     
     # Create a secure token (in practice, this would be securely managed)

@@ -15,7 +15,8 @@ def run_session_example():
     # Connection parameters
     gateway_http = "http://localhost:8889"
     gateway_ws = "ws://localhost:8889"
-    kernel_name = "sandbox-python"
+    # 默认内核为 python3（非自定义 sandbox 内核）
+    kernel_name = "python3"
     
     print(f"Connecting to kernel: {kernel_name}")
     
@@ -58,7 +59,8 @@ def run_pool_example():
     # Connection parameters
     gateway_http = "http://localhost:8889"
     gateway_ws = "ws://localhost:8889"
-    kernel_name = "sandbox-python"
+    # 默认内核为 python3（非自定义 sandbox 内核）
+    kernel_name = "python3"
     
     # Create a pool with metrics
     pool = PrometheusKernelSessionPool(

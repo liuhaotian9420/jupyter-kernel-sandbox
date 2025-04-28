@@ -144,7 +144,7 @@ mini-jupyter-sandbox/
 
 ## 使用方法
 ### 交互式 Notebook
-- 启动 Jupyter Notebook，选择 **Sandbox Python** 内核。
+- 启动 Jupyter Notebook，选择 **Python 3** 内核（默认内核为 python3，非自定义 sandbox 内核）。
 - 所有代码在全新、隔离的 Docker 容器中运行。
 - 保存到 `/home/jovyan/shared-data` 的文件可通过文件服务器和内核容器访问。
 
@@ -158,7 +158,7 @@ from jupyter_kernel_client import GatewayKernelSession
 with GatewayKernelSession(
     "http://localhost:8889",
     "ws://localhost:8889",
-    "sandbox-python"
+    "python3"  # 默认内核为 python3
 ) as session:
     # 执行代码
     result = session.execute("2 + 2")
@@ -172,6 +172,8 @@ with GatewayKernelSession(
 ```
 
 详见 `examples/basic_usage.py` 获取更完整示例。
+
+> **注意**：本项目默认使用 python3 内核（即 Jupyter 官方 Python 3 内核），而非自定义的 sandbox-python 内核。如需自定义内核，请参考"配置与可扩展性"章节。
 
 ## Python 客户端 API
 客户端包包含以下组件：
