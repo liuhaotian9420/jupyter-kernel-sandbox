@@ -209,7 +209,7 @@ async def main():
     async with AsyncGatewayKernelSession(
         "http://localhost:8889",
         "ws://localhost:8889",
-        "sandbox-python"
+        "python3"
     ) as session:
         result = await session.execute("print('Hello, async world!')")
         print(result)
@@ -233,7 +233,7 @@ start_http_server(8000)
 session = PrometheusGatewayKernelSession(
     "http://localhost:8889",
     "ws://localhost:8889",
-    "sandbox-python"
+    "python3"
 )
 
 with session:
@@ -253,7 +253,7 @@ from jupyter_kernel_client import AuthenticatedKernelSession
 session = AuthenticatedKernelSession(
     "http://localhost:8889",
     "ws://localhost:8889",
-    "sandbox-python",
+    "python3",
     file_server_url="http://localhost:8080",
     auth_token="your-secret-token"
 )
