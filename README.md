@@ -1,93 +1,317 @@
 # mini-jupyter-sandbox
 
+一个最小化、可扩展且面向生产的 Jupyter Notebook 沙箱环境，利用 [Jupyter Enterprise Gateway](https://jupyter-enterprise-gateway.readthedocs.io/en/latest/) 和 Docker 实现安全、容器化的内核执行。本项目适用于快速原型开发、实验以及在隔离的 Python 环境中安全执行代码。
 
+---
 
-## Getting started
+## 目录
+- [mini-jupyter-sandbox](#mini-jupyter-sandbox)
+  - [目录](#目录)
+  - [项目概述](#项目概述)
+  - [架构](#架构)
+  - [快速开始](#快速开始)
+    - [前置条件](#前置条件)
+    - [1. 克隆仓库](#1-克隆仓库)
+    - [2. 构建并启动环境](#2-构建并启动环境)
+    - [3. 停止环境](#3-停止环境)
+    - [4. 安装客户端包](#4-安装客户端包)
+  - [目录结构](#目录结构)
+  - [配置与可扩展性](#配置与可扩展性)
+    - [添加更多内核](#添加更多内核)
+  - [使用方法](#使用方法)
+    - [交互式 Notebook](#交互式-notebook)
+    - [编程方式访问](#编程方式访问)
+  - [Python 客户端 API](#python-客户端-api)
+    - [核心客户端](#核心客户端)
+  - [高级特性](#高级特性)
+    - [异步客户端](#异步客户端)
+    - [Prometheus 监控](#prometheus-监控)
+    - [认证](#认证)
+  - [开发与测试](#开发与测试)
+    - [依赖安装](#依赖安装)
+    - [运行测试](#运行测试)
+    - [测试环境搭建](#测试环境搭建)
+  - [贡献指南](#贡献指南)
+  - [许可证](#许可证)
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+---
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## 项目概述
+本沙箱为每个内核在独立的 Docker 容器中运行 Jupyter Notebook 环境，实现主机与用户间的隔离。适用于：
+- 安全、临时的代码执行
+- 教育或培训环境
+- 自定义内核的实验
+- 通过客户端 API 自动化代码执行
+- 扩展以支持更多语言或运行策略
 
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+## 架构
+- **Jupyter Notebook**：用户界面，支持代码、Markdown 和数据可视化。
+- **Enterprise Gateway**：远程内核管理，每个内核在 Docker 容器中启动。
+- **自定义 Kernel Spec**：定义沙箱 Python 内核，使用自定义 Docker 镜像。
+- **文件服务器**：基于 FastAPI 的 HTTP 服务器，实现主机与容器间的文件共享。
+- **共享数据卷**：在容器和服务间持久化文件。
+- **Python 客户端 API**：通过 `GatewayKernelSession` 类以编程方式访问内核。
 
 ```
-cd existing_repo
-git remote add origin https://gitlab-a3uxyvfhkudlt7.kesci.com/heywhale_data/mini-jupyter-sandbox.git
-git branch -M main
-git push -uf origin main
+[用户] ⟷ [Jupyter Notebook] ⟷ [Enterprise Gateway] ⟷ [沙箱内核 (Docker)]
+   ↑                                    ↑
+   |                                    |
+[Python 客户端] -------------------- [文件服务器]
+                        ↑                ↑
+                        ↓                ↓
+                    [共享数据卷]
 ```
 
-## Integrate with your tools
+## 快速开始
+### 前置条件
+- [Docker](https://docs.docker.com/get-docker/)（含 Compose）
+- [Python 3.10+](https://www.python.org/downloads/)
+- （可选）[Git](https://git-scm.com/)
 
-- [ ] [Set up project integrations](https://gitlab-a3uxyvfhkudlt7.kesci.com/heywhale_data/mini-jupyter-sandbox/-/settings/integrations)
+### 1. 克隆仓库
+```bash
+git clone <this-repo-url>
+cd mini-jupyter-sandbox
+```
 
-## Collaborate with your team
+### 2. 构建并启动环境
+```bash
+docker-compose up --build
+```
+- Jupyter Notebook: http://localhost:8888 （无需 token）
+- 文件服务器: http://localhost:8080
+- Enterprise Gateway: http://localhost:8889
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+### 3. 停止环境
+```bash
+docker-compose down
+```
 
-## Test and Deploy
+### 4. 安装客户端包
+```bash
+# 基础用法
+pip install -e .
 
-Use the built-in continuous integration in GitLab.
+# 含全部特性
+pip install -e ".[all]"
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+# 指定特性
+pip install -e ".[async,metrics]"
+```
 
-***
+## 目录结构
+```
+mini-jupyter-sandbox/
+├── examples/                  # 客户端使用示例
+│   ├── basic_usage.py         # 基础用法
+│   ├── async_example.py       # 异步用法
+│   ├── metrics_example.py     # Prometheus 监控示例
+│   └── auth_example.py        # 认证示例
+├── kernels/
+│   └── sandbox-python/
+│       └── kernel.json        # 沙箱 Python 内核规范
+├── file-server/               # FastAPI 文件服务器
+│   └── app.py                 # API 实现，含基于 token 的认证
+├── shared-data/               # 文件交换的共享卷
+├── src/
+│   └── jupyter_kernel_client/ # Python 包目录
+│       ├── __init__.py        # 包初始化
+│       ├── core/              # 核心客户端功能
+│       ├── async_client/      # 异步客户端
+│       ├── auth/              # 认证模块
+│       └── metrics/           # Prometheus 监控模块
+├── docker-compose.yaml        # 多服务编排
+├── Dockerfile                 # 自定义 Jupyter Notebook 镜像
+├── jupyter_notebook_config.py # Notebook 配置（远程内核管理）
+├── setup.py                   # 包安装脚本
+├── requirements-client.txt    # 客户端依赖
+├── requirements-test.txt      # 测试依赖
+└── README.md                  # 项目文档
+```
 
-# Editing this README
+## 配置与可扩展性
+- **自定义内核**：在 `kernels/sandbox-python/kernel.json` 定义，使用 `myorg/notebook-with-sandbox:latest` 镜像（由 Dockerfile 构建）。
+- **Dockerfile**：基于 `jupyter/base-notebook:python-3.10`，安装依赖、添加内核规范并设置权限。
+- **Enterprise Gateway**：在 `docker-compose.yaml` 和 `jupyter_notebook_config.py` 配置，支持通过 Docker 启动远程内核。
+- **共享数据**：`shared-data` 卷挂载到 notebook 和内核容器，实现文件交换。
+- **文件服务器**：基于 FastAPI，支持 HTTP 文件访问和 token 认证。
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+### 添加更多内核
+如需添加其他语言或环境：
+1. 在 `kernels/` 下创建新的内核规范。
+2. 根据需要更新 Dockerfile 和 `docker-compose.yaml`。
+3. 重新构建环境。
 
-## Suggestions for a good README
+## 使用方法
+### 交互式 Notebook
+- 启动 Jupyter Notebook，选择 **Sandbox Python** 内核。
+- 所有代码在全新、隔离的 Docker 容器中运行。
+- 保存到 `/home/jovyan/shared-data` 的文件可通过文件服务器和内核容器访问。
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+### 编程方式访问
+使用 `GatewayKernelSession` 客户端以编程方式执行内核代码：
 
-## Name
-Choose a self-explaining name for your project.
+```python
+from jupyter_kernel_client import GatewayKernelSession
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+# 创建并使用内核
+with GatewayKernelSession(
+    "http://localhost:8889",
+    "ws://localhost:8889",
+    "sandbox-python"
+) as session:
+    # 执行代码
+    result = session.execute("2 + 2")
+    print(result)  # 输出: 4
+    
+    # 可向共享卷写文件
+    result = session.execute("""
+        with open('/data/shared/my_output.txt', 'w') as f:
+            f.write('Hello from the kernel!')
+    """)
+```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+详见 `examples/basic_usage.py` 获取更完整示例。
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## Python 客户端 API
+客户端包包含以下组件：
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+### 核心客户端
+核心模块提供标准同步客户端：
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+```python
+class GatewayKernelSession:
+    """用于与 Jupyter Enterprise Gateway 内核交互的客户端。"""
+    
+    def __init__(self, gateway_http, gateway_ws, kernel_name, 
+                 launch_env=None, startup_timeout=30,
+                 max_retries=3, retry_delay=1.0):
+        """初始化内核会话。"""
+        
+    def execute(self, code, timeout=10):
+        """在内核中执行代码并返回结果。"""
+```
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+模块还提供 `KernelSessionPool` 类用于管理多个内核。
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+## 高级特性
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+### 异步客户端
+支持异步编程，提供异步客户端：
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+```python
+import asyncio
+from jupyter_kernel_client import AsyncGatewayKernelSession
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+async def main():
+    async with AsyncGatewayKernelSession(
+        "http://localhost:8889",
+        "ws://localhost:8889",
+        "sandbox-python"
+    ) as session:
+        result = await session.execute("print('Hello, async world!')")
+        print(result)
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+asyncio.run(main())
+```
 
-## License
-For open source projects, say how it is licensed.
+详见 `examples/async_example.py` 获取更完整示例。
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+### Prometheus 监控
+支持 Prometheus 集成以监控内核性能：
+
+```python
+from prometheus_client import start_http_server
+from jupyter_kernel_client import PrometheusGatewayKernelSession
+
+# 启动 Prometheus HTTP 服务
+start_http_server(8000)
+
+# 创建带监控的会话
+session = PrometheusGatewayKernelSession(
+    "http://localhost:8889",
+    "ws://localhost:8889",
+    "sandbox-python"
+)
+
+with session:
+    result = session.execute("print('Hello, Prometheus!')")
+    print(result)
+```
+
+详见 `examples/metrics_example.py` 获取更完整示例。
+
+### 认证
+支持安全文件操作的认证集成：
+
+```python
+from jupyter_kernel_client import AuthenticatedKernelSession
+
+# 创建认证会话
+session = AuthenticatedKernelSession(
+    "http://localhost:8889",
+    "ws://localhost:8889",
+    "sandbox-python",
+    file_server_url="http://localhost:8080",
+    auth_token="your-secret-token"
+)
+
+with session:
+    # 使用内核写文件
+    session.execute_file_op('write', 'test.txt', 
+                          content="Hello from authenticated kernel!")
+    
+    # 上传本地文件到共享目录
+    session.upload_to_kernel('local_file.txt')
+    
+    # 从内核下载文件
+    session.download_from_kernel('kernel_output.csv')
+```
+
+详见 `examples/auth_example.py` 获取更完整示例。
+
+## 开发与测试
+### 依赖安装
+安装测试和客户端依赖：
+```bash
+pip install -e ".[dev]"
+```
+
+### 运行测试
+```bash
+# 若环境未启动，先启动
+docker-compose up -d
+
+# 使用测试脚本运行测试
+python -m pytest tests/
+
+# 运行指定类别测试
+python -m pytest tests/ -k "unit"  # 仅运行单元测试
+python -m pytest tests/ -k "integration"  # 仅运行集成测试
+```
+
+### 测试环境搭建
+提供辅助脚本以搭建测试环境：
+```bash
+# Linux/macOS
+chmod +x test_env.sh
+./test_env.sh
+
+# Windows
+powershell -ExecutionPolicy Bypass -File test_env.ps1
+```
+
+## 贡献指南
+欢迎贡献！请：
+- Fork 仓库并创建功能分支
+- 编写清晰、模块化、文档完善的代码
+- 为所有更改添加或更新测试
+- 确保所有测试通过后提交 PR
+- 提交带有清晰描述的 PR
+
+## 许可证
+请在此处指定您的许可证（如 MIT、Apache-2.0）。如未指定，请添加 LICENSE 文件。
+
+---
+
+如有问题或需支持，请提交 issue 或联系维护者。

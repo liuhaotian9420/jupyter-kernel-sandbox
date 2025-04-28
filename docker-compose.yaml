@@ -1,0 +1,65 @@
+version: '3.8'
+services:
+  enterprise-gateway:
+    image: elyra/enterprise-gateway:3.2.3
+    container_name: enterprise-gateway
+    ports:
+      - "8889:8888"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./kernels/sandbox-python:/usr/local/share/jupyter/kernels/sandbox-python:ro
+    environment:
+      EG_CONTAINER_RUNTIME: "docker"
+      EG_CONTAINER_IMAGE: "myorg/notebook-with-sandbox:latest"
+      EG_DOCKER_IMAGE_PULL_POLICY: "IF_NOT_PRESENT"
+      EG_DOCKER_NETWORK: "mini-jupyter-sandbox_default"   # ensure kernels join this network
+
+  notebook:
+    build: .
+    image: myorg/notebook-with-sandbox:latest
+    container_name: jupyter-notebook
+    # no need for `user: root` or chown hacks any more
+    command: start-notebook.sh --NotebookApp.token='' --allow-root
+    ports:
+      - "8888:8888"
+    volumes:
+      - shared-data:/home/jovyan/shared-data
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      JUPYTER_ENABLE_LAB: "yes"
+
+  file-server:
+    container_name: file-server
+    image: python:3.10-slim
+    working_dir: /app
+    volumes:
+      # the shared data volume
+      - shared-data:/data/shared
+      # mount your FastAPI app code
+      - ./file-server:/app:ro
+    ports:
+      - "8080:8080"
+    command: >
+      bash -lc "
+        pip install --no-cache-dir fastapi uvicorn python-multipart websocket-client &&
+        uvicorn app:app --host 0.0.0.0 --port 8080
+      "
+
+  sandbox-kernel:
+    container_name: sandbox-kernel
+    image: python:3.10-slim
+    # install curl, then sleep indefinitely
+    command: >
+      bash -lc "
+        apt-get update && apt-get install -y curl &&
+        tail -f /dev/null &&
+        apt-get install -y docker.io && 
+        tail -f /dev/null
+      "
+    environment:
+      FILE_SERVER_URL: http://file-server:8080
+    volumes:
+      - shared-data:/data/shared
+
+volumes:
+  shared-data:

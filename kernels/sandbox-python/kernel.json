@@ -1,0 +1,20 @@
+{
+    "argv": [
+      "python3",
+      "-m", "ipykernel_launcher",
+      "-f", "{connection_file}"
+    ],
+    "display_name": "Sandbox Python",
+    "language": "python",
+  
+    "metadata": {
+      "process_proxy": {
+        "class_name": "enterprise_gateway.services.processproxies.container.ContainerProcessProxy",
+  
+        "config": {
+          "image_name": "myorg/notebook-with-sandbox:latest"
+        }
+      }
+    }
+  }
+  
