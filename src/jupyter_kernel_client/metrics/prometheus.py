@@ -49,7 +49,7 @@ KERNEL_RETRY_COUNT = Counter(
 class MetricsCollector:
     """Base class for collecting and reporting metrics."""
     
-    def __init__(self, kernel_type: str = "sandbox-python"):
+    def __init__(self, kernel_type: str = "python3"):
         self.kernel_type = kernel_type
         
     def record_startup_time(self, duration: float):
@@ -104,7 +104,7 @@ class PrometheusKernelSessionMixin:
     """
     
     def __init__(self, *args, **kwargs):
-        self.metrics_collector = MetricsCollector(kwargs.get('kernel_name', 'sandbox-python'))
+        self.metrics_collector = MetricsCollector(kwargs.get('kernel_name', 'python3'))
         # Call the parent class's __init__
         super().__init__(*args, **kwargs)
         
@@ -148,7 +148,7 @@ class PrometheusKernelPoolMixin:
     """
     
     def __init__(self, size, **session_kwargs):
-        self.metrics_collector = MetricsCollector(session_kwargs.get('kernel_name', 'sandbox-python'))
+        self.metrics_collector = MetricsCollector(session_kwargs.get('kernel_name', 'python3'))
         # Call the parent class's __init__
         super().__init__(size, **session_kwargs)
         self.metrics_collector.set_pool_size(size)
@@ -183,12 +183,11 @@ def example_usage():
     # Start Prometheus HTTP server
     start_http_server(8000)
     print("Prometheus metrics server started at http://localhost:8000")
-    
-    # Create a session with metrics
+      # Create a session with metrics
     session = PrometheusGatewayKernelSession(
         "http://localhost:8889",
         "ws://localhost:8889",
-        "sandbox-python"
+        "python3"
     )
     
     # Use the session
@@ -201,13 +200,12 @@ def example_usage():
             session.execute("raise ValueError('Test error')")
         except RuntimeError:
             print("Error captured and metrics recorded")
-            
-    # Create a pool with metrics
+              # Create a pool with metrics
     pool = PrometheusKernelSessionPool(
         2,
         gateway_http="http://localhost:8889",
         gateway_ws="ws://localhost:8889",
-        kernel_name="sandbox-python"
+        kernel_name="python3"
     )
     
     # Use the pool

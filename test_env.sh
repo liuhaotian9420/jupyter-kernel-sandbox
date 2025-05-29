@@ -44,7 +44,7 @@ echo "Running basic connectivity test..."
 python -c "
 from jupyter_kernel_client import GatewayKernelSession
 try:
-    with GatewayKernelSession('http://localhost:8889', 'ws://localhost:8889', 'sandbox-python') as session:
+    with GatewayKernelSession('http://localhost:8889', 'ws://localhost:8889', 'python3') as session:
         result = session.execute('2+2')
         print(f'Test success! Result: {result}')
 except Exception as e:

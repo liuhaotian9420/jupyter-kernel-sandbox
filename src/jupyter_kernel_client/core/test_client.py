@@ -9,11 +9,10 @@ from jupyter_kernel_client.core.client import GatewayKernelSession
 
 class TestGatewayKernelSessionMock(unittest.TestCase):
     """Unit tests for GatewayKernelSession using mocks."""
-    
-    def setUp(self):
+      def setUp(self):
         self.gateway_http = "http://localhost:8889"
         self.gateway_ws = "ws://localhost:8889"
-        self.kernel_name = "sandbox-python"
+        self.kernel_name = "python3"
         self.session = None
     
     @patch('jupyter_kernel_client.core.client.requests.post')
@@ -105,14 +104,13 @@ class TestGatewayKernelSessionMock(unittest.TestCase):
 @pytest.mark.integration
 class TestGatewayKernelSessionIntegration:
     """Integration tests that connect to a real Enterprise Gateway."""
-    
-    @pytest.fixture(scope="module")
+      @pytest.fixture(scope="module")
     def gateway_config(self):
         """Fixture for gateway connection details."""
         return {
             "http": "http://localhost:8889",
             "ws": "ws://localhost:8889",
-            "kernel_name": "sandbox-python"
+            "kernel_name": "python3"
         }
     
     @pytest.fixture(autouse=True)

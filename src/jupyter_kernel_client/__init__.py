@@ -10,7 +10,7 @@ Basic usage:
     with GatewayKernelSession(
         "http://localhost:8889", 
         "ws://localhost:8889",
-        "sandbox-python"
+        "python3"
     ) as session:
         result = session.execute("print('Hello, World!')")
         print(result)

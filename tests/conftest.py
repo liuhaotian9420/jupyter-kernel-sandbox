@@ -15,7 +15,7 @@ def gateway_config():
     return {
         "http": "http://localhost:8889",
         "ws": "ws://localhost:8889",
-        "kernel_name": "sandbox-python"
+        "kernel_name": "python3"  # Updated to match actual usage
     }
 
 @pytest.fixture(scope="session")

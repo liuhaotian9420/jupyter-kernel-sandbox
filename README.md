@@ -1,11 +1,11 @@
-# mini-jupyter-sandbox
+# Jupyter Kernel Sandbox
 
 一个最小化、可扩展且面向生产的 Jupyter Notebook 沙箱环境，利用 [Jupyter Enterprise Gateway](https://jupyter-enterprise-gateway.readthedocs.io/en/latest/) 和 Docker 实现安全、容器化的内核执行。本项目适用于快速原型开发、实验以及在隔离的 Python 环境中安全执行代码。
 
 ---
 
 ## 目录
-- [mini-jupyter-sandbox](#mini-jupyter-sandbox)
+- [Jupyter Kernel Sandbox](#jupyter-kernel-sandbox)
   - [目录](#目录)
   - [项目概述](#项目概述)
   - [架构](#架构)
@@ -31,7 +31,6 @@
     - [依赖安装](#依赖安装)
     - [运行测试](#运行测试)
     - [测试环境搭建](#测试环境搭建)
-  - [贡献指南](#贡献指南)
   - [许可证](#许可证)
 
 ---
@@ -51,6 +50,7 @@
 - **文件服务器**：基于 FastAPI 的 HTTP 服务器，实现主机与容器间的文件共享。
 - **共享数据卷**：在容器和服务间持久化文件。
 - **Python 客户端 API**：通过 `GatewayKernelSession` 类以编程方式访问内核。
+- **sandbox-kernel 服务**：独立的内核容器，提供额外的隔离和测试功能。
 
 ```
 [用户] ⟷ [Jupyter Notebook] ⟷ [Enterprise Gateway] ⟷ [沙箱内核 (Docker)]
@@ -59,7 +59,7 @@
 [Python 客户端] -------------------- [文件服务器]
                         ↑                ↑
                         ↓                ↓
-                    [共享数据卷]
+                    [共享数据卷] ⟷ [sandbox-kernel]
 ```
 
 ## 快速开始
@@ -69,13 +69,13 @@
 - （可选）[Git](https://git-scm.com/)
 
 ### 1. 克隆仓库
-```bash
+```powershell
 git clone <this-repo-url>
 cd mini-jupyter-sandbox
 ```
 
 ### 2. 构建并启动环境
-```bash
+```powershell
 docker-compose up --build
 ```
 - Jupyter Notebook: http://localhost:8888 （无需 token）
@@ -83,12 +83,12 @@ docker-compose up --build
 - Enterprise Gateway: http://localhost:8889
 
 ### 3. 停止环境
-```bash
+```powershell
 docker-compose down
 ```
 
 ### 4. 安装客户端包
-```bash
+```powershell
 # 基础用法
 pip install -e .
 
@@ -112,6 +112,9 @@ mini-jupyter-sandbox/
 │       └── kernel.json        # 沙箱 Python 内核规范
 ├── file-server/               # FastAPI 文件服务器
 │   └── app.py                 # API 实现，含基于 token 的认证
+├── scripts/                   # 工具脚本
+│   ├── cleanup.sh             # 清理脚本（Linux/macOS）
+│   └── cleanup.ps1            # 清理脚本（Windows）
 ├── shared-data/               # 文件交换的共享卷
 ├── src/
 │   └── jupyter_kernel_client/ # Python 包目录
@@ -120,12 +123,17 @@ mini-jupyter-sandbox/
 │       ├── async_client/      # 异步客户端
 │       ├── auth/              # 认证模块
 │       └── metrics/           # Prometheus 监控模块
+├── tests/                     # 测试目录
+│   ├── conftest.py            # pytest 配置文件
+│   └── test_kernel_client.py  # 主测试文件
 ├── docker-compose.yaml        # 多服务编排
 ├── Dockerfile                 # 自定义 Jupyter Notebook 镜像
 ├── jupyter_notebook_config.py # Notebook 配置（远程内核管理）
 ├── setup.py                   # 包安装脚本
 ├── requirements-client.txt    # 客户端依赖
 ├── requirements-test.txt      # 测试依赖
+├── test_env.sh                # 测试环境搭建脚本（Linux/macOS）
+├── test_env.ps1               # 测试环境搭建脚本（Windows）
 └── README.md                  # 项目文档
 ```
 
@@ -135,6 +143,7 @@ mini-jupyter-sandbox/
 - **Enterprise Gateway**：在 `docker-compose.yaml` 和 `jupyter_notebook_config.py` 配置，支持通过 Docker 启动远程内核。
 - **共享数据**：`shared-data` 卷挂载到 notebook 和内核容器，实现文件交换。
 - **文件服务器**：基于 FastAPI，支持 HTTP 文件访问和 token 认证。
+- **sandbox-kernel 服务**：独立的内核容器，提供额外的隔离和测试功能。
 
 ### 添加更多内核
 如需添加其他语言或环境：
@@ -144,7 +153,7 @@ mini-jupyter-sandbox/
 
 ## 使用方法
 ### 交互式 Notebook
-- 启动 Jupyter Notebook，选择 **Python 3** 内核（默认内核为 python3，非自定义 sandbox 内核）。
+- 启动 Jupyter Notebook，选择 **Python 3** 内核。
 - 所有代码在全新、隔离的 Docker 容器中运行。
 - 保存到 `/home/jovyan/shared-data` 的文件可通过文件服务器和内核容器访问。
 
@@ -173,7 +182,7 @@ with GatewayKernelSession(
 
 详见 `examples/basic_usage.py` 获取更完整示例。
 
-> **注意**：本项目默认使用 python3 内核（即 Jupyter 官方 Python 3 内核），而非自定义的 sandbox-python 内核。如需自定义内核，请参考"配置与可扩展性"章节。
+> **注意**：项目支持多种内核类型，包括默认的 `python3` 内核和自定义的 `sandbox-python` 内核。可根据需要选择合适的内核。
 
 ## Python 客户端 API
 客户端包包含以下组件：
@@ -275,45 +284,45 @@ with session:
 ## 开发与测试
 ### 依赖安装
 安装测试和客户端依赖：
-```bash
+```powershell
 pip install -e ".[dev]"
 ```
 
 ### 运行测试
-```bash
+```powershell
 # 若环境未启动，先启动
 docker-compose up -d
 
-# 使用测试脚本运行测试
+# 使用 pytest 运行测试
 python -m pytest tests/
 
 # 运行指定类别测试
 python -m pytest tests/ -k "unit"  # 仅运行单元测试
 python -m pytest tests/ -k "integration"  # 仅运行集成测试
+
+# 运行测试脚本
+python tests/test_kernel_client.py --unit
+python tests/test_kernel_client.py --integration
+python tests/test_kernel_client.py --all
 ```
 
 ### 测试环境搭建
 提供辅助脚本以搭建测试环境：
-```bash
+```powershell
+# Windows PowerShell（推荐）
+powershell -ExecutionPolicy Bypass -File test_env.ps1
+
 # Linux/macOS
 chmod +x test_env.sh
 ./test_env.sh
-
-# Windows
-powershell -ExecutionPolicy Bypass -File test_env.ps1
 ```
 
-## 贡献指南
-欢迎贡献！请：
-- Fork 仓库并创建功能分支
-- 编写清晰、模块化、文档完善的代码
-- 为所有更改添加或更新测试
-- 确保所有测试通过后提交 PR
-- 提交带有清晰描述的 PR
+这些脚本将自动：
+1. 安装客户端包及其开发依赖
+2. 启动 Docker 环境（如果尚未运行）
+3. 等待服务就绪
+4. 运行基础连接测试
+
 
 ## 许可证
 请在此处指定您的许可证（如 MIT、Apache-2.0）。如未指定，请添加 LICENSE 文件。
-
----
-
-如有问题或需支持，请提交 issue 或联系维护者。

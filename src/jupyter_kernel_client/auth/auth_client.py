@@ -253,12 +253,11 @@ def example_usage():
     """Simple example of using the authenticated client."""
     # Example authentication token (would normally be securely managed)
     AUTH_TOKEN = "s3cr3t-token"
-    
-    # Create an authenticated session
+      # Create an authenticated session
     session = AuthenticatedKernelSession(
         "http://localhost:8889",
         "ws://localhost:8889",
-        "sandbox-python",
+        "python3",
         file_server_url="http://localhost:8080",
         auth_token=AUTH_TOKEN
     )

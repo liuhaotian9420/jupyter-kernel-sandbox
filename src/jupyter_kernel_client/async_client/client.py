@@ -302,21 +302,19 @@ class AsyncKernelSessionPool:
 
 # Example usage
 async def example_usage():
-    """Simple example of using the async client."""
-    # Single session example
+    """Simple example of using the async client."""    # Single session example
     async with AsyncGatewayKernelSession(
         "http://localhost:8889",
         "ws://localhost:8889",
-        "sandbox-python"
+        "python3"
     ) as session:
         result = await session.execute("print('Hello, async world!')")
         print(result)
-        
-    # Pool example
+          # Pool example
     pool = AsyncKernelSessionPool(2, 
         gateway_http="http://localhost:8889",
         gateway_ws="ws://localhost:8889",
-        kernel_name="sandbox-python"
+        kernel_name="python3"
     )
     
     # Initialize pool
